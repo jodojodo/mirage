@@ -364,7 +364,7 @@ class BLEHCIDevice(bt.BtHCIDevice):
 			advType = ADV_DIRECT_IND_LOW
 		else:
 			io.fail("Advertisements type not recognized, using ADV_IND.")
-			advtype = ADV_IND
+			advType = ADV_IND
 		dAddr = None if destAddr == "00:00:00:00:00:00" else destAddr
 		
 		advData = data
@@ -381,7 +381,7 @@ class BLEHCIDevice(bt.BtHCIDevice):
 				advData = data+(31 - len(data))*b"\x00"
 
 		self._internalCommand(HCI_Cmd_LE_Set_Advertising_Parameters(adv_type=advType, daddr=dAddr, datype=daType, oatype=oaType,interval_min=intervalMin, interval_max = intervalMax))
-		self._internalCommand(New_HCI_Cmd_LE_Set_Advertising_Data(data=EIR_Hdr(data)))
+		self._internalCommand(New_HCI_Cmd_LE_Set_Advertising_Data(data=EIR_Hdr(advData)))
 		self._exitCommandMode()
 
 	def _setAddressMode(self,mode="public"):
@@ -578,45 +578,45 @@ class BLEEmitter(wireless.Emitter):
 					else:
 						packet.packet /= BTLE_DATA()
 						if isinstance(packet,BLEDisconnect):
-							packet.packet /= ControlPDU(optcode=0x02)
+							packet.packet /= BTLE_CTRL(opcode=0x02)
 						elif isinstance(packet,BLEEmptyPDU):
 							data.LLID = 1
 						elif isinstance(packet,BLEControlPDU):
-							optcode = 0
+							opcode = 0
 							if packet.type == "LL_CONNECTION_UPDATE_REQ":
-								optcode = 0x00
+								opcode = 0x00
 							elif packet.type == "LL_CHANNEL_MAP_REQ":
-								optcode = 0x01
+								opcode = 0x01
 							elif packet.type == "LL_TERMINATE_IND":
-								optcode = 0x02
+								opcode = 0x02
 							elif packet.type == "LL_ENC_REQ":
-								optcode = 0x03
+								opcode = 0x03
 							elif packet.type == "LL_ENC_RSP":
-								optcode = 0x04
+								opcode = 0x04
 							elif packet.type == "LL_START_ENC_REQ":
-								optcode = 0x05
+								opcode = 0x05
 							elif packet.type == "LL_START_ENC_RESP":
-								optcode = 0x06
+								opcode = 0x06
 							elif packet.type == "LL_UNKNOWN_RSP":
-								optcode = 0x07
+								opcode = 0x07
 							elif packet.type == "LL_FEATURE_REQ":
-								optcode = 0x08
+								opcode = 0x08
 							elif packet.type == "LL_FEATURE_RSP":
-								optcode = 0x09
+								opcode = 0x09
 							elif packet.type == "LL_PAUSE_ENC_REQ":
-								optcode = 0x0A
+								opcode = 0x0A
 							elif packet.type == "LL_PAUSE_ENC_RSP":
-								optcode = 0x0B
+								opcode = 0x0B
 							elif packet.type == "LL_VERSION_IND":
-								optcode = 0x0C
+								opcode = 0x0C
 							elif packet.type == "LL_REJECT_IND":
-								optcode = 0x0D
-							packet.packet /= ControlPDU(optcode = optcode)
+								opcode = 0x0D
+							packet.packet /= BTLE_CTRL(opcode = opcode)
 							if packet.data is not None or packet.data != b"":
 								packet.packet /= packet.data
 
 				# Common sublayers
-				if HCI_Command_Hdr not in packet.packet and ControlPDU not in packet.packet and BTLE_ADV not in packet.packet:
+				if HCI_Command_Hdr not in packet.packet and BTLE_CTRL not in packet.packet and BTLE_ADV not in packet.packet:
 					
 
 					if (
@@ -739,15 +739,15 @@ class BLEEmitter(wireless.Emitter):
 						packet.packet /= ATT_Read_By_Type_Response(packet.data)
 
 					elif isinstance(packet,BLEReadBlobRequest):
-						packet.packet /= New_ATT_Read_Blob_Request(gatt_handle=packet.handle,offset=packet.offset)
+						packet.packet /= ATT_Read_Blob_Request(gatt_handle=packet.handle,offset=packet.offset)
 					elif isinstance(packet,BLEReadBlobResponse):
-						packet.packet /= New_ATT_Read_Blob_Response(value=packet.value)
+						packet.packet /= ATT_Read_Blob_Response(value=packet.value)
 					elif isinstance(packet,BLEHandleValueNotification):
-						packet.packet /= New_ATT_Handle_Value_Notification(gatt_handle=packet.handle,value=packet.value)
+						packet.packet /= ATT_Handle_Value_Notification(gatt_handle=packet.handle,value=packet.value)
 					elif isinstance(packet,BLEHandleValueIndication):
-						packet.packet /= New_ATT_Handle_Value_Indication(gatt_handle=packet.handle,value=packet.value)
+						packet.packet /= ATT_Handle_Value_Indication(gatt_handle=packet.handle,value=packet.value)
 					elif isinstance(packet,BLEHandleValueConfirmation):
-						packet.packet /= New_ATT_Handle_Value_Confirmation()
+						packet.packet /= ATT_Handle_Value_Confirmation()
 
 					elif isinstance(packet,BLEFindInformationRequest):
 						packet.packet /= ATT_Find_Information_Request(start=packet.startHandle,end = packet.endHandle)
@@ -923,30 +923,30 @@ class BLEReceiver(wireless.Receiver):
 						endHandle = packet[ATT_Read_By_Type_Request].end,
 						uuid=packet[ATT_Read_By_Type_Request].uuid
 						)
-				elif New_ATT_Read_Blob_Request in packet:
+				elif ATT_Read_Blob_Request in packet:
 					return BLEReadBlobRequest(
-						handle = packet[New_ATT_Read_Blob_Request].gatt_handle,
-						offset = packet[New_ATT_Read_Blob_Request].offset,
+						handle = packet[ATT_Read_Blob_Request].gatt_handle,
+						offset = packet[ATT_Read_Blob_Request].offset,
 						connectionHandle = packet.handle
 						)
-				elif New_ATT_Read_Blob_Response in packet:
+				elif ATT_Read_Blob_Response in packet:
 					return BLEReadBlobResponse(
-						value = packet[New_ATT_Read_Blob_Response].value,
+						value = packet[ATT_Read_Blob_Response].value,
 						connectionHandle = packet.handle
 						)
-				elif New_ATT_Handle_Value_Notification in packet:
+				elif ATT_Handle_Value_Notification in packet:
 					return BLEHandleValueNotification(
 						connectionHandle = packet.handle,
-						handle = packet[New_ATT_Handle_Value_Notification].gatt_handle,
-						value = packet[New_ATT_Handle_Value_Notification].value
+						handle = packet[ATT_Handle_Value_Notification].gatt_handle,
+						value = packet[ATT_Handle_Value_Notification].value
 						)
-				elif New_ATT_Handle_Value_Indication in packet:
+				elif ATT_Handle_Value_Indication in packet:
 					return BLEHandleValueIndication(
 						connectionHandle = packet.handle,
-						handle = packet[New_ATT_Handle_Value_Indication].gatt_handle,
-						value = packet[New_ATT_Handle_Value_Indication].value
+						handle = packet[ATT_Handle_Value_Indication].gatt_handle,
+						value = packet[ATT_Handle_Value_Indication].value
 						)
-				elif New_ATT_Handle_Value_Confirmation in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x1e):
+				elif ATT_Handle_Value_Confirmation in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x1e):
 					return BLEHandleValueConfirmation(connectionHandle = packet.handle)
 
 				elif ATT_Write_Response in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x13):
@@ -1295,27 +1295,27 @@ class BLEReceiver(wireless.Receiver):
 								endHandle = packet[ATT_Read_By_Type_Request].end,
 								uuid=packet[ATT_Read_By_Type_Request].uuid
 								)
-						elif New_ATT_Handle_Value_Notification in packet:
+						elif ATT_Handle_Value_Notification in packet:
 							new = BLEHandleValueNotification(
-								handle = packet[New_ATT_Handle_Value_Notification].handle,
-								value = packet[New_ATT_Handle_Value_Notification].value
+								handle = packet[ATT_Handle_Value_Notification].handle,
+								value = packet[ATT_Handle_Value_Notification].value
 								)
-						elif New_ATT_Handle_Value_Indication in packet:
+						elif ATT_Handle_Value_Indication in packet:
 							new = BLEHandleValueIndication(
 								connectionHandle = packet.handle,
-								handle = packet[New_ATT_Handle_Value_Indication].gatt_handle,
-								value = packet[New_ATT_Handle_Value_Indication].value
+								handle = packet[ATT_Handle_Value_Indication].gatt_handle,
+								value = packet[ATT_Handle_Value_Indication].value
 								)
-						elif New_ATT_Handle_Value_Confirmation in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x1e):
+						elif ATT_Handle_Value_Confirmation in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x1e):
 							new = BLEHandleValueConfirmation(connectionHandle = packet.handle)
-						elif New_ATT_Read_Blob_Request in packet:
+						elif ATT_Read_Blob_Request in packet:
 							new = BLEReadBlobRequest(
-								handle = packet[New_ATT_Read_Blob_Request].gatt_handle,
-								offset = packet[New_ATT_Read_Blob_Request].offset
+								handle = packet[ATT_Read_Blob_Request].gatt_handle,
+								offset = packet[ATT_Read_Blob_Request].offset
 								)
-						elif New_ATT_Read_Blob_Response in packet:
+						elif ATT_Read_Blob_Response in packet:
 							new = BLEReadBlobResponse(
-								value = packet[New_ATT_Read_Blob_Response].value
+								value = packet[ATT_Read_Blob_Response].value
 								)
 						elif ATT_Write_Response in packet or (ATT_Hdr in packet and packet[ATT_Hdr].opcode == 0x13):
 							new = BLEWriteResponse()
@@ -1415,11 +1415,11 @@ class BLEReceiver(wireless.Receiver):
 					elif packet.LLID == 3:
 
 						try:
-							controlType = CONTROL_TYPES[packet.optcode]
+							controlType = CONTROL_TYPES[packet.opcode]
 						except:
 							controlType = "???"
 						try:
-							data = bytes(packet[ControlPDU:])[1:]
+							data = bytes(packet[BTLE_CTRL:])[1:]
 						except:
 							data = b""
 						if controlType == "LL_ENC_REQ":

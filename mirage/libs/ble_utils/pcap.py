@@ -302,7 +302,7 @@ class BLEPCAPDevice(wireless.PCAPDevice):
 					self.synchronized = True
 					return packet
 
-				if ControlPDU in packet and packet.optcode == 0x02:
+				if BTLE_CTRL in packet and packet.opcode == 0x02:
 					if packet.access_addr == 0x8e89bed6:
 						packet.access_addr= self.getAccessAddress()
 					self._setAccessAddress(0x8e89bed6)
@@ -341,7 +341,7 @@ class BLEPCAPDevice(wireless.PCAPDevice):
 						packet.access_addr= self.getAccessAddress()
 
 
-				if ControlPDU in packet and packet.optcode == 0x02: # TERMINATE_IND
+				if BTLE_CTRL in packet and packet.opcode == 0x02: # TERMINATE_IND
 					self._setAccessAddress(0x8e89bed6)
 					self.synchronized = False
 				

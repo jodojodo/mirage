@@ -16,6 +16,7 @@ class {0}(scenario.Scenario):
 		self.maxHandle=None
 		self.mitmRunning=False
 		_,self.discovered=tempfile.mkstemp()
+		self.attributeHandles=set()
 		os.close(_)
 		{1}
 
@@ -56,6 +57,7 @@ class {0}(scenario.Scenario):
 			while c<n:
 				line = content[c]
 				handle = utils.integerArg(line.strip()[1:-1])
+				self.attributeHandles.add(handle)
 				c+=1
 
 				t = content[c][7:]
@@ -110,7 +112,7 @@ class {0}(scenario.Scenario):
 				return False
 		return True
 
-	def _translateSingleHandleSlave(self,handle):
+	def _translateSingleHandleSlave(self, handle):
 		toRemove = 0
 		for start,end in self.removedHandles:
 			if start<=handle:
@@ -119,9 +121,34 @@ class {0}(scenario.Scenario):
 				break
 		return handle-toRemove
 
+	def _translateSingleHandleMaster(self, handle):
+		newHandle=handle
+		for start, end in self.removedHandles:
+			if start<=newHandle:
+				newHandle+=end-start+1 # end included
+			else:
+				break
+		return newHandle
+
+	def _checkMasterRequest(self, startHandle, endHandle):
+		# changes the startHandle if the request may answer only with forbidden handles
+		handle=startHandle
+		while handle not in self.attributeHandles and handle<endHandle:
+			handle+=1
+		if handle==endHandle:
+			return endHandle
+		removedSingleHandles=[h[0] for h in self.removedHandles]
+		if handle in removedSingleHandles:
+			while handle in removedSingleHandles or handle not in self.attributeHandles:
+				handle+=1
+			handle=min(handle, endHandle)
+			io.info("Correcting translation from "+hex(startHandle)+" to "+hex(handle)+" to avoid response with only forbidden handles")
+			return handle
+		return startHandle
+
 
 	def translateHandlesFromSlave(self, packet): 
-		io.info("Translating from Slave : "+packet.__repr__())
+		io.info("Translating from Slave : "+str(packet))
 		if type(packet)==ble.BLEReadByGroupTypeResponse:
 			new_attrs=[]
 			for attr in packet.attributes:
@@ -132,12 +159,12 @@ class {0}(scenario.Scenario):
 					new_attr['value']=attr['value']
 					new_attrs.append(new_attr)
 			if new_attrs:
-				io.info(packet.__repr__()+" translated to "+ble.BLEReadByGroupTypeResponse(attributes=new_attrs).__repr__())
+				io.info(str(packet)+" translated to "+str(ble.BLEReadByGroupTypeResponse(attributes=new_attrs)))
 				packet.attributes=new_attrs
 				packet.build()
 				return True
 			else:
-				io.info(packet.__repr__()+" dropped (handle removed)")
+				io.info(str(packet)+" dropped (handle removed)")
 				return False
 		elif type(packet)==ble.BLEReadByTypeResponse:
 			new_attrs=[]
@@ -152,12 +179,12 @@ class {0}(scenario.Scenario):
 					new_attr['value']=attr['value'][:1]+newValueHandle.to_bytes(2,"little")+attr['value'][3:]
 					new_attrs.append(new_attr)
 			if new_attrs:
-				io.info(packet.__repr__()+" translated to "+ble.BLEReadByTypeResponse(attributes=new_attrs).__repr__())
+				io.info(str(packet)+" translated to "+str(ble.BLEReadByTypeResponse(attributes=new_attrs)))
 				packet.attributes=new_attrs
 				packet.build()
 				return True
 			else:
-				io.info(packet.__repr__()+" dropped (handle removed)")
+				io.info(str(packet)+" dropped (handle removed)")
 				return False
 		elif type(packet)==ble.BLEFindInformationResponse:
 			new_attrs=[]
@@ -168,36 +195,33 @@ class {0}(scenario.Scenario):
 					new_attr['type']=attr['type']
 					new_attrs.append(new_attr)
 			if new_attrs:
-				io.info(packet.__repr__()+" translated to "+ble.BLEFindInformationResponse(attributes=new_attrs).__repr__())
+				io.info(str(packet)+" translated to "+str(ble.BLEFindInformationResponse(attributes=new_attrs)))
 				packet.attributes=new_attrs
 				packet.build()
 				return True
 			else:
-				io.info(packet.__repr__()+" dropped (handle removed)")
+				io.info(str(packet)+" dropped (handle removed)")
 				return False
 		else:
 			for attr in dir(packet):
 				if attr in ["handle","endHandle","startHandle","valueHandle"] and not (attr=="endHandle" and packet.endHandle==0xFFFF):
 					handle=getattr(packet, attr)
 					newHandle=self._translateSingleHandleSlave(handle)
-					io.info(handle.__repr__()+" has been replaced by "+newHandle.__repr__())
+					io.info(hex(handle)+" has been replaced by "+hex(newHandle))
 					setattr(packet,attr,newHandle)
 			return True
 
 
 	def translateHandlesFromMaster(self, packet):
-		io.info("Translating from Master : "+packet.__repr__())
+		io.info("Translating from Master : "+str(packet))
 		for attr in dir(packet):
 			if attr in ["handle","startHandle","endHandle","valueHandle"] and not (attr=="endHandle" and packet.endHandle==0xFFFF):
 				handle = getattr(packet, attr)
-				newHandle=handle
-				for start, end in self.removedHandles:
-					if start<=newHandle:
-						newHandle+=end-start+1 # end included
-					else:
-						break
+				newHandle = self._translateSingleHandleMaster(handle)
+				if attr=="startHandle" and packet.startHandle!=packet.endHandle:
+					newHandle=self._checkMasterRequest(newHandle, packet.endHandle)
 				setattr(packet, attr, newHandle)
-				io.info(handle.__repr__()+" has been replaced by "+newHandle.__repr__())
+				io.info(hex(handle)+" has been replaced by "+hex(newHandle))
 		return True
 
 
