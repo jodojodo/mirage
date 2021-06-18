@@ -1,0 +1,6 @@
+BLE_TABLES
+default allow
+END BLE_TABLES
+GATT_FILTER
+entity GATT type Characteristic uuid a8b3ff034834405189d03de95cddd318
+END GATT_FILTER

@@ -1,0 +1,6 @@
+BLE_TABLES
+default allow
+END BLE_TABLES
+GATT_FILTER
+entity GATT type Service uuid a8b3fb004834405189d03de95cddd318
+END GATT_FILTER
