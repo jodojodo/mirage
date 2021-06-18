@@ -12,6 +12,13 @@ Mirage is a powerful and modular framework dedicated to the security analysis of
   * support of **multiple devices**, such as HCI devices, Crazy Radio PA, RZUSBStick, BTLEJack, Nordic and Ubertooth sniffers
   * an **user-friendly development environment** allowing to easily **write new modules** or **customize existing ones**
 
+Man-in-The-Middle firewall additions
+------------------------------------
+
+This fork of the main repository contains a Proof-of-Concept for a Man-in-The-Middle based Bluetooth Low Energy firewall, as presented in the demo session of WiSec 2021.
+
+More details about the additions can be found in [FIREWALL.md](FIREWALL.md).
+
 Useful links
 ------------
 
@@ -34,10 +41,3 @@ We published two papers describing this tool:
 
  * Romain Cayre, Jonathan Roux, Eric Alata, Vincent Nicomette, Guillaume Auriol. [Mirage : un framework offensif pour l'audit du Bluetooth Low Energy](https://hal.laas.fr/hal-02268774). *Symposium sur la Sécurité des Technologies de l'Information et des Communications (SSTIC 2019)*, Jun 2019, Rennes, France. pp.229-258. **\[fr\]**
  * Romain Cayre, Vincent Nicomette, Guillaume Auriol, Eric Alata, Mohamed Kaâniche, et al.. [Mirage: towards a Metasploit-like framework for IoT](https://hal.laas.fr/hal-02346074). *2019 IEEE 30th International Symposium on Software Reliability Engineering (ISSRE)*, Oct 2019, Berlin, Germany. **\[en\]**
-
-Man-in-The-Middle firewall additions
-------------------------------------
-
-This fork of the main repository contains a Proof-of-Concept for a Man-in-The-Middle based Bluetooth Low Energy firewall, as presented in the demo session of WiSec 2021.
-
-More details about the additions can be found in [FIREWALL.md](FIREWALL.md).
