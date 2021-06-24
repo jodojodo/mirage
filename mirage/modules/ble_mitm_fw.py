@@ -16,7 +16,7 @@ class ble_mitm_fw(module.WirelessModule):
 				"CONNECTION_TYPE":"public",
 				"SLAVE_SPOOFING":"yes",
 				"MASTER_SPOOFING":"yes",
-				"ADVERTISING_STRATEGY":"preconnect", # "preconnect" (btlejuice) or "flood" (gattacker)
+				"MITM_STRATEGY":"preconnect", # "preconnect" (btlejuice) or "flood" (gattacker)
 				"SHOW_SCANNING":"yes",
 				"FW_RULES":"",
 				"LTK":""
