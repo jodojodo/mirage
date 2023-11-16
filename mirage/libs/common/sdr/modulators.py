@@ -199,7 +199,7 @@ class OQPSKModulator(SDRModulator):
 							iChannel += [(t if data[i] == "1" else -t) for t in self.pulse]
 						else:
 							qChannel += [(t if data[i] == "1" else -t) for t in self.pulse]
-					iChannel += [0.0] + [0.0 for i in range(len(qChannel)-len(iChannel))]
+					iChannel += [0.0] + [0.0 for i in range(len(qChannel)-len(iChannel))] #FIXME y en a forcément plus dans I non?
 					qChannel += [0.0]
 
 					iqSamples = []
