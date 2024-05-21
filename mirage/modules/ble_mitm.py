@@ -2,6 +2,7 @@ import multiprocessing
 from enum import IntEnum
 from mirage.libs import io,utils,ble
 from mirage.core import module
+import os
 
 class BLEMitmStage(IntEnum):
 	SCAN = 1
@@ -218,6 +219,7 @@ class ble_mitm(module.WirelessModule):
 	@module.scenarioSignal("onSlaveDisconnect")
 	def disconnectSlave(self,packet):
 		io.info("Slave disconnected !")
+		os.system("notify-send SLAVE DISCONNECTED")
 
 
 	@module.scenarioSignal("onMasterExchangeMTURequest")

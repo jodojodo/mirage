@@ -133,7 +133,7 @@ class ble_sniff(module.WirelessModule):
 		isAnEmpty = isinstance(packet,ble.BLEEmptyPDU)
 		unknownInName = "Unknown" in packet.name
 		isConnectReq = isinstance(packet,ble.BLEConnectRequest)
-		addressMatching = (    isConnectReq
+		addressMatching = (	isConnectReq
 				   and packet.addr == utils.addressArg(self.args["TARGET"])
 				   or  self.args["TARGET"] == ""
 				   or  (hasattr(packet,"addr") and packet.addr == utils.addressArg(self.args["TARGET"])))

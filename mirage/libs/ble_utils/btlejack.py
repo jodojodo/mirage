@@ -937,10 +937,10 @@ class BTLEJackDevice(wireless.Device):
 				ts_sec = int(timestamp)
 				ts_usec = int((timestamp - ts_sec)*1000000)
 
-				if pkt.crc_ok == 0x01:
-					io.success("CRC OK !")
-				else:
-					io.fail("CRC not OK !")
+				#if pkt.crc_ok == 0x01:
+				#	io.success("CRC OK !")
+				#else:
+				#	io.fail("CRC not OK !")
 
 				if pkt.crc_ok != 0x01 and self.crcEnabled:
 					return None
@@ -952,7 +952,8 @@ class BTLEJackDevice(wireless.Device):
 						rssi_max=-pkt.rssi,
 						rssi_min=-pkt.rssi,
 						rssi_avg=-pkt.rssi,
-						rssi_count=1)/BTLE()/BTLE_ADV(pkt.ble_payload)
+						rssi_count=1)/BTLE()/pkt.ble_payload
+						#rssi_count=1)/BTLE()/BTLE_ADV(pkt.ble_payload)
 			if BTLEJack_Access_Address_Notification in pkt:
 				self._addCandidateAccessAddress(accessAddress=pkt.access_address,
 								rssi=pkt.rssi,
@@ -1164,7 +1165,7 @@ class BTLEJackDevice(wireless.Device):
 				(major,minor) = self._getFirmwareVersion()
 				io.success("BTLEJack device "+("#"+str(self.index) if isinstance(self.index,int) else str(self.index))+
 					   " successfully instantiated (firmware version : "+str(major)+"."+str(minor)+")")
-				if major == 3 and minor == 14:
+				if (major == 3 and minor == 14) or (major == 4 and minor == 2):
 					io.info("Custom Mirage Firmware used ! Advertisements sniffing and jamming will be supported.")
 					self.capabilities += ["SNIFFING_ADVERTISEMENTS","SCANNING","JAMMING_ADVERTISEMENTS"]
 					self.customMirageFirmware = True

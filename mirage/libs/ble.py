@@ -1,4 +1,6 @@
-from scapy.all import *
+#from scapy.all import *
+from scapy.layers.bluetooth import *
+from scapy.layers.bluetooth4LE import *
 from mirage.core.module import WirelessModule
 from mirage.libs.ble_utils.scapy_hci_layers import *
 from mirage.libs.ble_utils.packets import *
@@ -11,6 +13,7 @@ from mirage.libs.ble_utils.butterfly import *
 from mirage.libs.ble_utils.adb import *
 from mirage.libs.ble_utils.hcidump import *
 from mirage.libs.ble_utils.hackrf import *
+from mirage.libs.ble_utils.soapy import *
 from mirage.libs.ble_utils.sniffle import *
 from mirage.libs.ble_utils.pcap import *
 from mirage.libs.ble_utils.helpers import *
@@ -29,39 +32,39 @@ class BLEHCIDevice(bt.BtHCIDevice):
 	The following capabilities are actually supported :
 
 	+-----------------------------------+----------------+
-	| Capability                        | Available ?    |
+	| Capability						| Available ?	|
 	+===================================+================+
-	| SCANNING                          | yes            |
+	| SCANNING						  | yes			|
 	+-----------------------------------+----------------+
-	| ADVERTISING                       | yes            |
+	| ADVERTISING					   | yes			|
 	+-----------------------------------+----------------+
-	| SNIFFING_ADVERTISEMENTS           | no             |
+	| SNIFFING_ADVERTISEMENTS		   | no			 |
 	+-----------------------------------+----------------+
-	| SNIFFING_NEW_CONNECTION           | no             |
+	| SNIFFING_NEW_CONNECTION		   | no			 |
 	+-----------------------------------+----------------+
-	| SNIFFING_EXISTING_CONNECTION      | no             |
+	| SNIFFING_EXISTING_CONNECTION	  | no			 |
 	+-----------------------------------+----------------+
-	| JAMMING_CONNECTIONS               | no             |
+	| JAMMING_CONNECTIONS			   | no			 |
 	+-----------------------------------+----------------+
-	| JAMMING_ADVERTISEMENTS            | no             |
+	| JAMMING_ADVERTISEMENTS			| no			 |
 	+-----------------------------------+----------------+
-	| HIJACKING_MASTER                  | no             |
+	| HIJACKING_MASTER				  | no			 |
 	+-----------------------------------+----------------+
-	| HIJACKING_SLAVE                   | no             |
+	| HIJACKING_SLAVE				   | no			 |
 	+-----------------------------------+----------------+
-	| INJECTING                         | no             |
+	| INJECTING						 | no			 |
 	+-----------------------------------+----------------+
-	| MITMING_EXISTING_CONNECTION       | no             |
+	| MITMING_EXISTING_CONNECTION	   | no			 |
 	+-----------------------------------+----------------+
-	| INITIATING_CONNECTION             | yes            |
+	| INITIATING_CONNECTION			 | yes			|
 	+-----------------------------------+----------------+
-	| RECEIVING_CONNECTION              | yes            |
+	| RECEIVING_CONNECTION			  | yes			|
 	+-----------------------------------+----------------+
-	| COMMUNICATING_AS_MASTER           | yes            |
+	| COMMUNICATING_AS_MASTER		   | yes			|
 	+-----------------------------------+----------------+
-	| COMMUNICATING_AS_SLAVE            | yes            |
+	| COMMUNICATING_AS_SLAVE			| yes			|
 	+-----------------------------------+----------------+
-	| HCI_MONITORING                    | no             |
+	| HCI_MONITORING					| no			 |
 	+-----------------------------------+----------------+
 
 	'''
@@ -520,6 +523,8 @@ class BLEEmitter(wireless.Emitter):
 			deviceClass = ADBDevice
 		elif "nrfsniffer" in interface:
 			deviceClass = NRFSnifferDevice
+		elif "soapy" in interface:
+			deviceClass = BLESoapyDevice
 		elif "hackrf" in interface:
 			deviceClass = BLEHackRFDevice
 		elif "sniffle" in interface:
@@ -547,7 +552,10 @@ class BLEEmitter(wireless.Emitter):
 						packet.packet /= HCI_Command_Hdr()/HCI_Cmd_LE_Create_Connection(
 											paddr=packet.dstAddr,
 											patype=packet.type,
-											atype=packet.initiatorType)
+											atype=packet.initiatorType,
+											interval=packet.interval,
+                                            min_interval=packet.interval,
+                                            max_interval=packet.interval)
 					elif isinstance(packet,BLEConnectionCancel):
 						packet.packet /= HCI_Command_Hdr()/HCI_Cmd_LE_Create_Connection_Cancel()
 					else:
@@ -578,7 +586,7 @@ class BLEEmitter(wireless.Emitter):
 						packet.packet /= (BTLE_ADV(TxAdd=0x00 if packet.initiatorType == "public" else 0x01,
 												  RxAdd=0x00 if packet.type == "public" else 0x01)/
 										BTLE_CONNECT_REQ(
-										AdvA=packet.dstAddr
+										AdvA=packet.dstAddr, interval=packet.interval
 						))
 
 					if isinstance(packet, BLEAdvertisement):
@@ -668,7 +676,7 @@ class BLEEmitter(wireless.Emitter):
 
 					if (
 						isinstance(packet,BLEConnectionParameterUpdateRequest) or
-					     	isinstance(packet,BLEConnectionParameterUpdateResponse)
+						 	isinstance(packet,BLEConnectionParameterUpdateResponse)
 					   ):
 							packet.packet /= L2CAP_Hdr()/L2CAP_CmdHdr(id=packet.l2capCmdId)
 					elif (
@@ -859,6 +867,8 @@ class BLEReceiver(wireless.Receiver):
 			deviceClass = BTLEJackDevice
 		elif "hackrf" in interface:
 			deviceClass = BLEHackRFDevice
+		elif "soapy" in interface:
+			deviceClass = BLESoapyDevice
 		elif "adb" in interface:
 			deviceClass = ADBDevice
 		elif "butterfly" in interface:
@@ -888,6 +898,8 @@ class BLEReceiver(wireless.Receiver):
 
 	def convert(self,packet):
 		if "hackrf" in self.interface:
+			packet, iqSamples = packet
+		elif "soapy" in self.interface:
 			packet, iqSamples = packet
 		cryptoInstance = BLELinkLayerCrypto.getInstance()
 		if cryptoInstance is not None and cryptoInstance.ready and BTLE_DATA in packet and packet.LLID > 1:
@@ -1218,6 +1230,7 @@ class BLEReceiver(wireless.Receiver):
 				else:
 					return None
 		elif (	"hackrf" in self.interface or
+				"soapy" in self.interface or
 				"butterfly" in self.interface or
 				"ubertooth" in self.interface or
  				"microbit" in self.interface or
@@ -1527,6 +1540,15 @@ class BLEReceiver(wireless.Receiver):
 									channel = packet.btle_channel
 									)
 			elif "hackrf" in self.interface:
+
+				new.additionalInformations = BLESniffingParameters(
+									rssi = packet.rssi_avg,
+									rssi_count = packet.rssi_count,
+									clk_100ns = packet.btle_clk_100ns,
+									clkn_high = packet.btle_clkn_high,
+									channel = packet.btle_channel
+									)
+			elif "soapy" in self.interface:
 
 				new.additionalInformations = BLESniffingParameters(
 									rssi = packet.rssi_avg,

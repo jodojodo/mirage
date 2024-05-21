@@ -1,4 +1,5 @@
-from scapy.all import *
+#from scapy.all import *
+from scapy.layers.bluetooth import *
 from queue import Queue
 from threading import Lock
 from mirage.core.module import WirelessModule

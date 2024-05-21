@@ -247,8 +247,12 @@ class WirelessModule(Module):
 		interface = interface if interface != "" else self.args['INTERFACE']
 		if interface not in self.__class__.Emitters:
 			try:
+				print(self.__class__, "><", self.__class__.Emitters, "><", self.__class__.EmittersClass[self.technology])
 				self.__class__.Emitters[interface] = self.__class__.EmittersClass[self.technology](interface=interface)
 			except AttributeError:
+				#FIXME
+				import traceback
+				traceback.print_exc()
 				io.fail("Device not found !")
 				utils.exitMirage()
 		self.__class__.Emitters[interface].updateSDRConfig(self.sdrConfig)
@@ -266,8 +270,12 @@ class WirelessModule(Module):
 		interface = interface if interface != "" else self.args['INTERFACE']
 		if interface not in self.__class__.Receivers:
 			try:
+				print(self.__class__, "><", self.__class__.Receivers, "><", self.__class__.ReceiversClass[self.technology])
 				self.__class__.Receivers[interface] = self.__class__.ReceiversClass[self.technology](interface=interface)
 			except AttributeError:
+				#FIXME
+				import traceback
+				traceback.print_exc()
 				io.fail("Device not found !")
 				utils.exitMirage()
 		self.__class__.Receivers[interface].updateSDRConfig(self.sdrConfig)

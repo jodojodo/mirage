@@ -1,6 +1,6 @@
 from mirage.libs.ble_utils import helpers
 from mirage.libs import wireless
-from scapy.all import *
+from scapy.layers.bluetooth import *;from scapy.layers.bluetooth4LE import *
 import struct
 
 class BLESniffingParameters(wireless.AdditionalInformations):
@@ -153,16 +153,17 @@ class BLEConnect(BLEPacket):
 	:type initiatorType: str
 
 	'''
-	def __init__(self,dstAddr="00:00:00:00:00:00", srcAddr="00:00:00:00:00:00", type="public", initiatorType = "public"):
+	def __init__(self,dstAddr="00:00:00:00:00:00", srcAddr="00:00:00:00:00:00", type="public", initiatorType = "public", interval=100):
 		super().__init__()
 		self.dstAddr = dstAddr.upper()
 		self.srcAddr = srcAddr.upper()
 		self.type = type
+		self.interval = interval
 		self.initiatorType = initiatorType
 		self.name = "BLE - Connect Packet"
 
 	def toString(self):
-		return "<< "+self.name+" | srcAddr="+self.srcAddr+" | dstAddr="+self.dstAddr+" | type="+self.type+" | initiatorType="+self.initiatorType+" >>"
+		return "<< "+self.name+" | srcAddr="+self.srcAddr+" | dstAddr="+self.dstAddr+" | type="+self.type+" | initiatorType="+self.initiatorType+" | interval="+str(self.interval)+" >>"
 
 class BLEConnectResponse(BLEPacket):
 	'''

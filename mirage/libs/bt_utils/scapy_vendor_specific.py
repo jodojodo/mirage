@@ -1,4 +1,4 @@
-from scapy.all import Packet
+from scapy.packet import Packet
 from scapy.layers.bluetooth import *
 '''
 This module contains some scapy definitions defining some vendor specific HCI packets in order to change the BD Address.
