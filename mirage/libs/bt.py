@@ -118,7 +118,7 @@ class BtHCIDevice(wireless.Device):
 
 			else:
 				self._exitListening()
-				utils.wait(seconds=0.0001)
+				#utils.wait(seconds=0.0001)
 			return None
 		# An error may occur during a socket restart
 		except OSError as e:
@@ -129,7 +129,9 @@ class BtHCIDevice(wireless.Device):
 	def _internalCommand(self,cmd,noResponse=False):
 		cmd = HCI_Hdr()/HCI_Command_Hdr()/cmd
 		while not self._commandModeEnabled():
-			utils.wait(seconds=0.05)
+			#utils.wait(seconds=0.05)
+			#utils.wait(second=0.01)
+			pass
 		self._flushCommandResponses()
 
 		self.send(cmd)

@@ -114,7 +114,8 @@ class ble_mitm(module.WirelessModule):
 
 	def waitUntilStage(self,stage):
 		while self.getStage() != stage:
-			utils.wait(seconds=0.01)
+			#utils.wait(seconds=0.00001)
+			pass
 
 	# Advertising related methods
 	@module.scenarioSignal("onSlaveAdvertisement")
@@ -157,7 +158,8 @@ class ble_mitm(module.WirelessModule):
 	@module.scenarioSignal("onSlaveConnect")
 	def connectOnSlave(self,initiatorType="public"):
 		while self.a2sEmitter.getMode() != "NORMAL":
-			utils.wait(seconds=1)
+			#utils.wait(seconds=1)
+			utils.wait(seconds=0.01)
 			print(self.a2sEmitter.getMode())
 
 		address = utils.addressArg(self.args["TARGET"])
@@ -173,7 +175,8 @@ class ble_mitm(module.WirelessModule):
 					)
 				)
 		while not self.a2sEmitter.isConnected():
-			utils.wait(seconds=0.5)
+			#utils.wait(seconds=0.5)
+			utils.wait(seconds=0.01)
 		io.success("Connected on slave : "+self.a2sReceiver.getCurrentConnection())
 
 	@module.scenarioSignal("onMasterConnect")
@@ -219,7 +222,6 @@ class ble_mitm(module.WirelessModule):
 	@module.scenarioSignal("onSlaveDisconnect")
 	def disconnectSlave(self,packet):
 		io.info("Slave disconnected !")
-		os.system("notify-send SLAVE DISCONNECTED")
 
 
 	@module.scenarioSignal("onMasterExchangeMTURequest")
