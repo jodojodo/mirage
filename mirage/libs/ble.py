@@ -490,7 +490,8 @@ class BLEHCIDevice(bt.BtHCIDevice):
 		encryptionChange = self.socket.recv()
 		while encryptionChange is None or HCI_Event_Encryption_Change not in encryptionChange:
 			if encryptionChange is not None:
-				self.pendingQueue.put(encryptionChange, block=True)
+				self.pendingQueue.appendleft(encryptionChange)
+				#self.pendingQueue.put(encryptionChange, block=True)
 			encryptionChange = self.socket.recv()
 		self._exitCommandMode()
 		return encryptionChange.enabled
@@ -511,25 +512,25 @@ class BLEEmitter(wireless.Emitter):
 	'''
 	def __init__(self, interface="hci0"):
 		deviceClass = None
-		if "hcidump" in interface:
+		if interface.startswith("hcidump"):
 			deviceClass = BLEHcidumpDevice
-		elif "hci" in interface:
+		elif interface.startswith("hci"):
 			deviceClass = BLEHCIDevice
-		elif "ubertooth" in interface:
+		elif interface.startswith("ubertooth"):
 			deviceClass = BLEUbertoothDevice
-		elif "microbit" in interface:
+		elif interface.startswith("microbit"):
 			deviceClass = BTLEJackDevice
-		elif "adb" in interface:
+		elif interface.startswith("adb"):
 			deviceClass = ADBDevice
-		elif "nrfsniffer" in interface:
+		elif interface.startswith("nrfsniffer"):
 			deviceClass = NRFSnifferDevice
-		elif "soapy" in interface:
+		elif interface.startswith("soapy"):
 			deviceClass = BLESoapyDevice
-		elif "hackrf" in interface:
+		elif interface.startswith("hackrf"):
 			deviceClass = BLEHackRFDevice
-		elif "sniffle" in interface:
+		elif interface.startswith("sniffle"):
 			deviceClass = SniffleDevice
-		elif "butterfly" in interface:
+		elif interface.startswith("butterfly"):
 			if ":sub" in interface:
 				deviceClass = BLEButterflySubdevice
 			else:
@@ -862,28 +863,28 @@ class BLEReceiver(wireless.Receiver):
 	def __init__(self,interface="hci0"):
 		deviceClass = None
 		self.encrypted = False
-		if "hcidump" in interface:
+		if interface.startswith("hcidump"):
 			deviceClass = BLEHcidumpDevice
-		elif "hci" in interface:
+		elif interface.startswith("hci"):
 			deviceClass = BLEHCIDevice
-		elif "ubertooth" in interface:
+		elif interface.startswith("ubertooth"):
 			deviceClass = BLEUbertoothDevice
-		elif "microbit" in interface:
+		elif interface.startswith("microbit"):
 			deviceClass = BTLEJackDevice
-		elif "hackrf" in interface:
+		elif interface.startswith("hackrf"):
 			deviceClass = BLEHackRFDevice
-		elif "soapy" in interface:
+		elif interface.startswith("soapy"):
 			deviceClass = BLESoapyDevice
-		elif "adb" in interface:
+		elif interface.startswith("adb"):
 			deviceClass = ADBDevice
-		elif "butterfly" in interface:
+		elif interface.startswith("butterfly"):
 			if ":sub" in interface:
 				deviceClass = BLEButterflySubdevice
 			else:
 				deviceClass = BLEButterflyDevice
-		elif "sniffle" in interface:
+		elif interface.startswith("sniffle"):
 			deviceClass = SniffleDevice
-		elif "nrfsniffer" in interface:
+		elif interface.startswith("nrfsniffer"):
 			deviceClass = NRFSnifferDevice
 		elif interface[-5:] == ".pcap":
 			deviceClass = BLEPCAPDevice
@@ -1248,7 +1249,8 @@ class BLEReceiver(wireless.Receiver):
 		#		"sniffle" in self.interface or
  		#		self.interface[-5:] == ".pcap"):
 			try:
-				if ((cryptoInstance is None) or (cryptoInstance is not None and not cryptoInstance.ready)) and self.encrypted:
+				#if ((cryptoInstance is None) or (cryptoInstance is not None and not cryptoInstance.ready)) and self.encrypted:
+				if ((cryptoInstance is None) or (not cryptoInstance.ready)) and self.encrypted:
 					new = BLEEncryptedPacket(connectionHandle = 1, data = bytes(packet[BTLE_DATA]))
 				else:
 

@@ -1,4 +1,5 @@
 from queue import Queue,Empty
+from collections import deque
 import time
 import mirage.libs.io as io
 from mirage.libs.wireless_utils.packets import *
@@ -86,17 +87,22 @@ class Emitter(PacketQueue):
 	def _task(self):
 		if not self.isEmpty():
 			self.transmitting = True
-			packet = self.queue.get()
-			if isinstance(packet,WaitPacket):
+			#packet = self.queue.get()
+			self.queue_size-=1
+			packet = self.queue.pop()
+			#if isinstance(packet,WaitPacket):
+			if type(packet)==WaitPacket:
 				data = bytes("WAIT:"+str(packet.time),"ascii")
 			else:
 				data = self.convert(packet)
-
 			if data is not None:
 				self._send(data)
 			self.transmitting = not self.isEmpty()
 		else:
 			time.sleep(0.005)
+			#time.sleep(0.000001)
+			#time.sleep(0.1)
+			#pass
 
 
 	def send(self,*packets):
@@ -113,7 +119,9 @@ class Emitter(PacketQueue):
 
 		'''
 		for packet in packets:
-			self.queue.put(packet)
+			self.queue.appendleft(packet)
+			self.queue_size+=1
+			#self.queue.put(packet)
 
 	def sendp(self,*packets):
 		'''
@@ -162,9 +170,13 @@ class Receiver(PacketQueue):
 		self.packetType = packetType
 		self.deviceType = deviceType
 		self.device = self.deviceType.get(self.interface)
-		self.callbacks = []
+		self.instanceof_events=set()
+		self.npackets_counter=0
+		self.npackets_events=set()
+		self.callbacks={}
 		self.receiving = False
-		self.callbacksQueue = Queue()
+		#self.callbacksQueue = Queue()
+		self.callbacksQueue = deque()
 		self.callbacksActiveListening = False
 		super().__init__(waitEmpty=False, autoStart=True)
 
@@ -201,7 +213,9 @@ class Receiver(PacketQueue):
 			packet = self.convert(data)
 			self._executeCallbacks(packet)
 			if packet is not None:
-				self.queue.put(packet)
+				self.queue.appendleft(packet)
+				self.queue_size+=1
+				#self.queue.put(packet)
 
 	def isReceiving(self):
 		'''
@@ -299,8 +313,11 @@ class Receiver(PacketQueue):
 		'''
 		def get():
 			try:
-				return self.queue.get(timeout=timeout)
-			except Empty:
+				#return self.queue.get(timeout=timeout)
+				res=self.queue.pop()#(timeout=timeout)
+				self.queue_size-=1
+				return res
+			except:# Empty:
 				return None
 
 		if loop:
@@ -356,16 +373,61 @@ class Receiver(PacketQueue):
 			>>> receiver.onEvent("BLEReadRequest",callback=onReadRequest, args=["Romain"])
 
 		'''
-		self.callbacks.append(Callback(event=event, function=callback, args=args, kwargs=kwargs, background=background))
+		is_int=False
+		if event.isdigit():
+			is_int=True
+			event=int(event)
+		if event not in self.callbacks:
+			self.callbacks[event]=[]
+			if event=="*" or is_int:
+				self.npackets_events.add(event)
+			else:
+				self.instanceof_events.add(event)
+		self.callbacks[event].append(Callback(event=event,function=callback,args=args,kwargs=kwargs,background=background))
+		#self.callbacks.append(Callback(event=event, function=callback, args=args, kwargs=kwargs, background=background))
+
+	def _updateEvents(self, packet):
+		if self.instanceof_events:
+			pt=packet.__class__.__name__
+			if pt in self.instanceof_events:
+				for callback in self.callbacks[pt]:
+					if callback.background:
+						callback.run(packet)
+					else:
+						self.callbacksQueue.appendleft((callback,packet))
+		if self.npackets_events:
+			self.npackets_counter+=1
+			for key in self.npackets_events:
+				if key=="*":
+					for callback in self.callbacks["*"]:
+						if callback.background:
+							callback.run(packet)
+						else:
+							self.callbacksQueue.appendleft((callback,packet))
+				else:
+					if self.npackets_counter%key==0:
+						for callback in self.callbacks[key]:
+							if callback.background:
+								callback.run(packet)
+							else:
+								self.callbacksQueue.appendleft((callback,packet))
+
 
 	def _executeCallbacks(self,packet):
-		for callback in self.callbacks:
-			callback.update(packet)
-			if callback.runnable:
-				if callback.background:
-					callback.run(packet)
-				else:
-					self.callbacksQueue.put((self.callbacks.index(callback),packet))
+		#import time
+		#d=time.time()
+		self._updateEvents(packet)
+		#for callback in self.callbacks:
+		#	callback.update(packet)
+		#	if callback.runnable:
+		#		if callback.background:
+		#			callback.run(packet)
+		#		else:
+		#			#self.callbacksQueue.put((self.callbacks.index(callback),packet))
+		#			self.callbacksQueue.appendleft((self.callbacks.index(callback),packet))
+		#f=time.time()-d
+		#print(f"_executeCallbacks m'a fait perdre {f}s")
+
 
 	def stopListeningCallbacks(self):
 		'''
@@ -389,15 +451,17 @@ class Receiver(PacketQueue):
 		'''
 		self.callbacksActiveListening = True
 		while self.callbacksActiveListening:
-			if not self.callbacksQueue.empty():
-				index,packet = self.callbacksQueue.get()
-				self.callbacks[index].run(packet)
+			#if not self.callbacksQueue.empty():
+			if len(self.callbacksQueue)>0:
+				#index,packet = self.callbacksQueue.get()
+				callback,packet = self.callbacksQueue.pop()
+				callback.run(packet)
 
 	def removeCallbacks(self):
 		'''
 		Remove the callbacks attached to the Receiver.
 		'''
-		self.callbacks = []
+		self.callbacks = {}
 
 	def stop(self):
 		'''

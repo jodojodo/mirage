@@ -1,6 +1,7 @@
 #from scapy.all import *
 from scapy.layers.bluetooth import *
 from queue import Queue
+from collections import deque
 from threading import Lock
 from mirage.core.module import WirelessModule
 from mirage.libs.bt_utils.packets import *
@@ -33,7 +34,8 @@ class BtHCIDevice(wireless.Device):
 
 	def __init__(self,interface):
 		super().__init__(interface=interface)
-		self.pendingQueue = Queue()
+		#self.pendingQueue = Queue()
+		self.pendingQueue = deque()
 		self.initializeBluetooth = True
 
 	def _initBT(self):
@@ -91,12 +93,18 @@ class BtHCIDevice(wireless.Device):
 		self.socket.send(data)
 
 	def _recv(self):
-		if not self.pendingQueue.empty():
-			recv = self.pendingQueue.get(block=True)
-		else:
+		try:
+			recv=self.pendingQueue.pop()
+		except:
 			self.recvLock.acquire()
-			recv = self.socket.recv()
+			recv=self.socket.recv()
 			self.recvLock.release()
+		#if not self.pendingQueue.empty():
+		#	recv = self.pendingQueue.get(block=True)
+		#else:
+		#	self.recvLock.acquire()
+		#	recv = self.socket.recv()
+		#	self.recvLock.release()
 		return recv
 
 
