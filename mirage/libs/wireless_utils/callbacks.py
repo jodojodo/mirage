@@ -53,8 +53,8 @@ class Callback:
 					self.runnable = True
 			elif self.eventType == "instanceof":
 				m = importlib.import_module(packet.__module__)
-				#if isinstance(packet, getattr(m, self.instance)):
-				if pt==getattr(m, self.instance):
+				if isinstance(packet, getattr(m, self.instance)):
+				#if pt==getattr(m, self.instance):
 					self.runnable = True
 
 

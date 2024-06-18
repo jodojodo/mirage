@@ -9,6 +9,9 @@ from mirage.libs.wireless_utils.device import Device,SDRDevice
 from mirage.libs.wireless_utils.pcapDevice import PCAPDevice
 from mirage.libs.wireless_utils.butterfly import ButterflyDevice
 
+import importlib
+
+
 class Emitter(PacketQueue):
 	'''
 	This class allows an user to communicate with a device in order to send data. Indeed, Mirage provides no direct access to the device component from the modules : the hardware components are manipulated thanks to the Emitter class and the Receiver class. Emitters' classes for a given technology inherits from this class.
@@ -87,9 +90,9 @@ class Emitter(PacketQueue):
 	def _task(self):
 		if not self.isEmpty():
 			self.transmitting = True
-			#packet = self.queue.get()
-			self.queue_size-=1
-			packet = self.queue.pop()
+			packet = self.queue.get()
+			#self.queue_size-=1
+			#packet = self.queue.pop()
 			#if isinstance(packet,WaitPacket):
 			if type(packet)==WaitPacket:
 				data = bytes("WAIT:"+str(packet.time),"ascii")
@@ -119,9 +122,9 @@ class Emitter(PacketQueue):
 
 		'''
 		for packet in packets:
-			self.queue.appendleft(packet)
-			self.queue_size+=1
-			#self.queue.put(packet)
+			#self.queue.appendleft(packet)
+			#self.queue_size+=1
+			self.queue.put(packet)
 
 	def sendp(self,*packets):
 		'''
@@ -144,8 +147,6 @@ class Emitter(PacketQueue):
 		super().stop()
 		if self.isDeviceUp():
 			self.device.close()
-
-
 
 
 class Receiver(PacketQueue):
@@ -213,9 +214,9 @@ class Receiver(PacketQueue):
 			packet = self.convert(data)
 			self._executeCallbacks(packet)
 			if packet is not None:
-				self.queue.appendleft(packet)
-				self.queue_size+=1
-				#self.queue.put(packet)
+				#self.queue.appendleft(packet)
+				#self.queue_size+=1
+				self.queue.put(packet)
 
 	def isReceiving(self):
 		'''
@@ -233,6 +234,9 @@ class Receiver(PacketQueue):
 	def _task(self):
 		self.receiving = True
 		pkt = self.device.recv()
+		#if pkt is not None:
+			#print("DEBUG _task", pkt)
+			#pkt.show()
 		self._add(pkt)
 		self.receiving = False
 
@@ -313,10 +317,10 @@ class Receiver(PacketQueue):
 		'''
 		def get():
 			try:
-				#return self.queue.get(timeout=timeout)
-				res=self.queue.pop()#(timeout=timeout)
-				self.queue_size-=1
-				return res
+				return self.queue.get(timeout=timeout)
+				#res=self.queue.pop()#(timeout=timeout)
+				#self.queue_size-=1
+				#return res
 			except:# Empty:
 				return None
 
@@ -340,13 +344,13 @@ class Receiver(PacketQueue):
 		Some examples are represented in the following table:
 
 		+----------------------+-------------------------------+
-		| Event                |  Description                  |
+		| Event				|  Description				  |
 		+======================+===============================+
-		| \*                   |  every packet                 |
+		| \*				   |  every packet				 |
 		+----------------------+-------------------------------+
-		| 3                    |  every 3 packets              |
+		| 3					|  every 3 packets			  |
 		+----------------------+-------------------------------+
-		| BLEReadRequest       |  every BLE Read Request       |
+		| BLEReadRequest	   |  every BLE Read Request	   |
 		+----------------------+-------------------------------+
 
 		The function *callback* is called with the following format : callback(packet,*args,**kwargs)
@@ -388,13 +392,17 @@ class Receiver(PacketQueue):
 
 	def _updateEvents(self, packet):
 		if self.instanceof_events:
-			pt=packet.__class__.__name__
-			if pt in self.instanceof_events:
-				for callback in self.callbacks[pt]:
-					if callback.background:
-						callback.run(packet)
-					else:
-						self.callbacksQueue.appendleft((callback,packet))
+			#pt=packet.__class__.__name__
+			pt=packet.__class__
+			m=importlib.import_module(packet.__module__)
+			#if pt in self.instanceof_events:
+			for pt2 in self.instanceof_events:
+				if issubclass(pt, getattr(m,pt2)):
+					for callback in self.callbacks[pt2]:
+						if callback.background:
+							callback.run(packet)
+						else:
+							self.callbacksQueue.appendleft((callback,packet))
 		if self.npackets_events:
 			self.npackets_counter+=1
 			for key in self.npackets_events:

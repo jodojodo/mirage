@@ -1,7 +1,7 @@
 import time,threading
-#from queue import Queue
-from collections import deque # WARNING : some operations may not be thread-safe! Chosen for efficiency given the use made here
-# --> append/pop from both sides is thread-safe
+from queue import Queue
+#from collections import deque # WARNING : some operations may not be thread-safe! Chosen for efficiency given the use made here
+## --> append/pop from both sides is thread-safe
 from mirage.libs.utils import exitMirage
 
 class StoppableThread(threading.Thread):
@@ -41,9 +41,9 @@ class PacketQueue:
 	def __init__(self, waitEmpty = False, autoStart = True):
 		self.waitEmpty = waitEmpty
 		self.autoStart = autoStart
-		#self.queue = Queue()
-		self.queue = deque()
-		self.queue_size = 0
+		self.queue = Queue()
+		#self.queue = deque()
+		#self.queue_size = 0
 		self.isStarted = False
 		if self.isDeviceUp():
 			self.device.subscribe(self)
@@ -112,18 +112,18 @@ class PacketQueue:
 		:return: boolean indicating if the queue is empty
 		:rtype: bool
 		'''
-		#return self.queue.empty()
-		try:
-			self.queue.append(self.queue.pop())
-			return False
-		except:
-			return True
+		return self.queue.empty()
+	#	try:
+	#		self.queue.append(self.queue.pop())
+	#		return False
+	#	except:
+	#		return True
 		#return self.queue_size==0
 
 	def clear(self):
-		self.queue.clear()
-		#while not self.isEmpty():
-		#	self.queue.get(False)
+		#self.queue.clear()
+		while not self.isEmpty():
+			self.queue.get(False)
 
 	def _task(self):
 		pass

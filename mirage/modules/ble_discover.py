@@ -3,6 +3,9 @@ from mirage.core import module
 import configparser
 
 
+#FIXME
+import wpu.gogolprint as gogolprint
+@gogolprint.gogolprintedc(print_caller=True)
 class ble_discover(module.WirelessModule):
 	def init(self):
 		self.technology = "ble"
@@ -54,13 +57,13 @@ class ble_discover(module.WirelessModule):
 								"permissions":permissions,
 								"value":value,
 								"valueHandle":valueHandle
-							    }
+								}
 				if "descriptors" in characteristic:
 					for descriptor in characteristic["descriptors"]:
 						uuid = descriptor["type"].hex()
-						handle = "0x{:04x}".format(descriptor["handle"])
-						value = descriptor["value"].hex()
-						config[handle] = {"type":"descriptor","uuid":uuid,"value":value}
+					handle = "0x{:04x}".format(descriptor["handle"])
+					value = descriptor["value"].hex()
+					config[handle] = {"type":"descriptor","uuid":uuid,"value":value}
 		with open(self.args["GATT_FILE"], 'w') as outfile:
 			config.write(outfile)
 			io.success("Discovered services and characteristics are saved as "+self.args["GATT_FILE"]+" (CFG file format)")
@@ -71,7 +74,7 @@ class ble_discover(module.WirelessModule):
 
 			if p is None:
 				self.emitter.sendp(retry)
-			else:			
+			else:
 				for typeInstance in types:
 					if isinstance(p,typeInstance):
 						return p
@@ -169,7 +172,6 @@ class ble_discover(module.WirelessModule):
 		start,end, continuer = startHandle, endHandle, True
 		services = []
 		while continuer:
-
 			request = ble.BLEReadByGroupTypeRequest(startHandle=start,endHandle=end,uuid=uuid)
 			
 			self.emitter.sendp(request)

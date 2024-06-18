@@ -114,6 +114,7 @@ class Module:
 			self.postrun()
 			raise KeyboardInterrupt
 		except EOFError:
+			traceback.print_exc()
 			self.postrun()
 			raise EOFError
 	def info(self):

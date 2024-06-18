@@ -271,6 +271,7 @@ class ble_sniff(module.WirelessModule):
 			return self.nok()
 		while all([not receiver.isSynchronized() for receiver in self.receivers]):
 			utils.wait(seconds=0.001)
+			#utils.wait(seconds=0.1)
 		for receiver in self.receivers:
 			if receiver.isSynchronized():
 				self.displayConnection(self.receivers.index(receiver))

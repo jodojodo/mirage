@@ -167,7 +167,7 @@ class ble_mitm(module.WirelessModule):
 
 		self.responderAddress = address
 		self.responderAddressType = b"\x00" if self.args["CONNECTION_TYPE"] == "public" else b"\x01"
-		io.info("Connecting to slave "+address+"...")
+		io.info("Connecting to slave "+address+f" ({connectionType})...")
 		self.a2sEmitter.sendp(ble.BLEConnect(
 					dstAddr=address,
 					type=connectionType,
@@ -175,8 +175,8 @@ class ble_mitm(module.WirelessModule):
 					)
 				)
 		while not self.a2sEmitter.isConnected():
-			#utils.wait(seconds=0.5)
-			utils.wait(seconds=0.01)
+			utils.wait(seconds=0.5)
+			#utils.wait(seconds=0.01)
 		io.success("Connected on slave : "+self.a2sReceiver.getCurrentConnection())
 
 	@module.scenarioSignal("onMasterConnect")
@@ -759,7 +759,8 @@ class ble_mitm(module.WirelessModule):
 					#utils.wait(seconds=0.01)
 					utils.wait(seconds=0.0001)
 			else:
-				self.waitUntilStage(BLEMitmStage.STOP, time=0.000001)
+				#self.waitUntilStage(BLEMitmStage.STOP, time=0.000001)
+				self.waitUntilStage(BLEMitmStage.STOP, time=0.001)
 			if self.scenarioEnabled:
 				self.endScenario()
 			return self.ok()

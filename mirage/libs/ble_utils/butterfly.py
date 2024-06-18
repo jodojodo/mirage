@@ -4,6 +4,9 @@ from mirage.libs import wireless,io,utils
 from queue import Queue
 from mirage.libs.wireless_utils.device import Device
 
+#FIXME
+import wpu.gogolprint as gogolprint
+@gogolprint.gogolprintedc(print_caller=True)
 class BLEButterflySubdevice(wireless.Device):
 	'''
 	This (sub)device allows to interact with one specific role (Master or Slave) of a BLE connection when an InjectaBLE complex attack is performed using ButteRFly Device.
@@ -16,11 +19,11 @@ class BLEButterflySubdevice(wireless.Device):
 	The following capabilities are supported :
 
 	+-----------------------------------+----------------------------+
-	| Capability                        | Available ?                |
+	| Capability						| Available ?				|
 	+===================================+============================+
-	| COMMUNICATING_AS_MASTER           | yes (if Y == 0)            |
+	| COMMUNICATING_AS_MASTER		   | yes (if Y == 0)			|
 	+-----------------------------------+----------------------------+
-	| COMMUNICATING_AS_SLAVE            | yes (if Y == 1)            |
+	| COMMUNICATING_AS_SLAVE			| yes (if Y == 1)			|
 	+-----------------------------------+----------------------------+
 	'''
 	sharedMethods = [
@@ -165,6 +168,7 @@ class BLEButterflySubdevice(wireless.Device):
 	def close(self):
 		self.mainDevice.detachSubDevice("master" if self.subIndex == 0 else "slave")
 
+
 class BLEButterflyDevice(wireless.ButterflyDevice):
 	'''
 	This device allows to communicate with a ButteRFly Device in order to interact with Bluetooth Low Energy protocol.
@@ -173,39 +177,39 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 	The following capabilities are actually supported :
 
 	+-------------------------------------------+----------------+
-	| Capability                                | Available ?    |
+	| Capability								| Available ?	|
 	+===========================================+================+
-	| SCANNING                                  | yes            |
+	| SCANNING								  | yes			|
 	+-------------------------------------------+----------------+
-	| ADVERTISING                               | no             |
+	| ADVERTISING							   | no			 |
 	+-------------------------------------------+----------------+
-	| SNIFFING_ADVERTISEMENTS                   | yes            |
+	| SNIFFING_ADVERTISEMENTS				   | yes			|
 	+-------------------------------------------+----------------+
-	| SNIFFING_NEW_CONNECTION                   | yes            |
+	| SNIFFING_NEW_CONNECTION				   | yes			|
 	+-------------------------------------------+----------------+
-	| SNIFFING_EXISTING_CONNECTION              | no             |
+	| SNIFFING_EXISTING_CONNECTION			  | no			 |
 	+-------------------------------------------+----------------+
-	| JAMMING_CONNECTIONS                       | no             |
+	| JAMMING_CONNECTIONS					   | no			 |
 	+-------------------------------------------+----------------+
-	| JAMMING_ADVERTISEMENTS                    | no             |
+	| JAMMING_ADVERTISEMENTS					| no			 |
 	+-------------------------------------------+----------------+
-	| INJECTING                                 | yes            |
+	| INJECTING								 | yes			|
 	+-------------------------------------------+----------------+
-	| MITMING_EXISTING_CONNECTION               | yes            |
+	| MITMING_EXISTING_CONNECTION			   | yes			|
 	+-------------------------------------------+----------------+
-	| HIJACKING_MASTER                          | yes            |
+	| HIJACKING_MASTER						  | yes			|
 	+-------------------------------------------+----------------+
-	| HIJACKING_SLAVE                           | yes            |
+	| HIJACKING_SLAVE						   | yes			|
 	+-------------------------------------------+----------------+
-	| INITIATING_CONNECTION                     | no             |
+	| INITIATING_CONNECTION					 | no			 |
 	+-------------------------------------------+----------------+
-	| RECEIVING_CONNECTION                      | no             |
+	| RECEIVING_CONNECTION					  | no			 |
 	+-------------------------------------------+----------------+
-	| COMMUNICATING_AS_MASTER                   | no             |
+	| COMMUNICATING_AS_MASTER				   | no			 |
 	+-------------------------------------------+----------------+
-	| COMMUNICATING_AS_SLAVE                    | no             |
+	| COMMUNICATING_AS_SLAVE					| no			 |
 	+-------------------------------------------+----------------+
-	| HCI_MONITORING                            | no             |
+	| HCI_MONITORING							| no			 |
 	+-------------------------------------------+----------------+
 
 	'''
@@ -524,7 +528,7 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 		rsp = self._internalCommand(Butterfly_Set_Channel_Command(channel=channel))
 		return rsp.status == 0x00
 
-	def sniffNewConnections(self,address="FF:FF:FF:FF:FF:FF",channel=None):
+	def sniffNewConnections(self,address="FF:FF:FF:FF:FF:FF",channel=37):#channel=None):
 		'''
 		This method starts the new connections sniffing mode.
 
@@ -552,7 +556,7 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 		self._setFilter(address)
 		self._setFollowMode(True)
 
-	def sniffAdvertisements(self,address='FF:FF:FF:FF:FF:FF',channel=None):
+	def sniffAdvertisements(self,address='FF:FF:FF:FF:FF:FF',channel=37):#channel=None):
 		'''
 		This method starts the advertisement sniffing mode.
 
@@ -580,6 +584,7 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 		self._setFilter(address)
 		self._setFollowMode(False)
 
+
 	def _injectPacket(self,packet):
 		self.inject = True
 		self.currentAttack["attack"] = "injection"
@@ -587,6 +592,7 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 		io.info("Starting injection attack: injecting ...")
 		self._internalCommand(Butterfly_Send_Payload_Command(payload_direction=0x00,payload_size=len(raw(packet[BTLE_DATA:])),payload_content=raw(packet[BTLE_DATA:])))
 		self._send(Butterfly_Message_Hdr()/Butterfly_Command_Hdr()/Butterfly_Start_Attack_Command(attack=0x01))
+
 
 	def setHijacking(self,target="master",enable=True):
 		'''
@@ -624,6 +630,7 @@ class BLEButterflyDevice(wireless.ButterflyDevice):
 				self.currentAttack["status"] = "launched"
 				io.info("Starting Master Hijacking attack: injecting LL_TERMINATE_IND...")
 				self._send(Butterfly_Message_Hdr()/Butterfly_Command_Hdr()/Butterfly_Start_Attack_Command(attack=0x02))
+
 
 	def setMitm(self,enable=True):
 		'''

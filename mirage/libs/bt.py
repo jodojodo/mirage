@@ -12,6 +12,10 @@ from mirage.libs.bt_utils.hciconfig import HCIConfig
 from mirage.libs.bt_utils.constants import *
 from mirage.libs import wireless,io,utils
 
+import traceback
+
+
+
 class BtHCIDevice(wireless.Device):
 	'''
 	This device allows to communicate with an HCI Device in order to use Bluetooth protocol.
@@ -96,6 +100,8 @@ class BtHCIDevice(wireless.Device):
 		try:
 			recv=self.pendingQueue.pop()
 		except:
+			#NOTE uncomment in case of freeze with unknown cause
+			#traceback.print_exc()
 			self.recvLock.acquire()
 			recv=self.socket.recv()
 			self.recvLock.release()
@@ -126,10 +132,11 @@ class BtHCIDevice(wireless.Device):
 
 			else:
 				self._exitListening()
-				#utils.wait(seconds=0.0001)
+				utils.wait(seconds=0.0001)
 			return None
 		# An error may occur during a socket restart
 		except OSError as e:
+			traceback.print_exc()
 			self._exitListening()
 			return None
 
@@ -137,9 +144,9 @@ class BtHCIDevice(wireless.Device):
 	def _internalCommand(self,cmd,noResponse=False):
 		cmd = HCI_Hdr()/HCI_Command_Hdr()/cmd
 		while not self._commandModeEnabled():
-			#utils.wait(seconds=0.05)
+			utils.wait(seconds=0.05)
 			#utils.wait(second=0.01)
-			pass
+			#pass
 		self._flushCommandResponses()
 
 		self.send(cmd)
