@@ -672,14 +672,14 @@ class ble_mitm(module.WirelessModule):
 
 				self.a2sReceiver.setScan(enable=False)
 				self.a2sReceiver.removeCallbacks()
+				# Connect Callbacks
+				self.a2mReceiver.onEvent("BLEConnectResponse",callback=self.connect)
 				if self.args["MITM_STRATEGY"] == "preconnect":
 					self.connectOnSlave()
 
 				self.a2mEmitter.setAdvertising(enable=True)
 				io.info("Entering WAIT_CONNECTION stage ...")
 				self.setStage(BLEMitmStage.WAIT_CONNECTION)
-				# Connect Callbacks
-				self.a2mReceiver.onEvent("BLEConnectResponse",callback=self.connect)
 			elif self.args["MITM_STRATEGY"] == "injection":
 				# Maybe the MITM is already established using an injection strategy
 				self.setStage(BLEMitmStage.ACTIVE_MITM)
@@ -759,8 +759,8 @@ class ble_mitm(module.WirelessModule):
 					#utils.wait(seconds=0.01)
 					utils.wait(seconds=0.0001)
 			else:
-				#self.waitUntilStage(BLEMitmStage.STOP, time=0.000001)
-				self.waitUntilStage(BLEMitmStage.STOP, time=0.001)
+				self.waitUntilStage(BLEMitmStage.STOP, time=0.000001)
+				#self.waitUntilStage(BLEMitmStage.STOP, time=0.001)
 			if self.scenarioEnabled:
 				self.endScenario()
 			return self.ok()

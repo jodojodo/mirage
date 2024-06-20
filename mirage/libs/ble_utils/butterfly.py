@@ -4,9 +4,6 @@ from mirage.libs import wireless,io,utils
 from queue import Queue
 from mirage.libs.wireless_utils.device import Device
 
-#FIXME
-import wpu.gogolprint as gogolprint
-@gogolprint.gogolprintedc(print_caller=True)
 class BLEButterflySubdevice(wireless.Device):
 	'''
 	This (sub)device allows to interact with one specific role (Master or Slave) of a BLE connection when an InjectaBLE complex attack is performed using ButteRFly Device.

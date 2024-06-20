@@ -148,7 +148,6 @@ class Emitter(PacketQueue):
 		if self.isDeviceUp():
 			self.device.close()
 
-
 class Receiver(PacketQueue):
 	'''
 	This class allows an user to communicate with a device in order to receive data. Indeed, Mirage provides no direct access to the device component from the modules : the hardware components are manipulated thanks to the Emitter class and the Receiver class. Receivers' classes for a given technology inherits from this class.
@@ -176,8 +175,8 @@ class Receiver(PacketQueue):
 		self.npackets_events=set()
 		self.callbacks={}
 		self.receiving = False
-		#self.callbacksQueue = Queue()
-		self.callbacksQueue = deque()
+		self.callbacksQueue = Queue()
+		#self.callbacksQueue = deque()
 		self.callbacksActiveListening = False
 		super().__init__(waitEmpty=False, autoStart=True)
 
@@ -212,8 +211,9 @@ class Receiver(PacketQueue):
 	def _add(self,data):
 		if data is not None:
 			packet = self.convert(data)
-			self._executeCallbacks(packet)
+			#self._executeCallbacks(packet)
 			if packet is not None:
+				self._executeCallbacks(packet)
 				#self.queue.appendleft(packet)
 				#self.queue_size+=1
 				self.queue.put(packet)
@@ -402,7 +402,8 @@ class Receiver(PacketQueue):
 						if callback.background:
 							callback.run(packet)
 						else:
-							self.callbacksQueue.appendleft((callback,packet))
+							#self.callbacksQueue.appendleft((callback,packet))
+							self.callbacksQueue.put((callback,packet))
 		if self.npackets_events:
 			self.npackets_counter+=1
 			for key in self.npackets_events:
@@ -411,14 +412,16 @@ class Receiver(PacketQueue):
 						if callback.background:
 							callback.run(packet)
 						else:
-							self.callbacksQueue.appendleft((callback,packet))
+							#self.callbacksQueue.appendleft((callback,packet))
+							self.callbacksQueue.put((callback,packet))
 				else:
 					if self.npackets_counter%key==0:
 						for callback in self.callbacks[key]:
 							if callback.background:
 								callback.run(packet)
 							else:
-								self.callbacksQueue.appendleft((callback,packet))
+								#self.callbacksQueue.appendleft((callback,packet))
+								self.callbacksQueue.put((callback,packet))
 
 
 	def _executeCallbacks(self,packet):
@@ -459,10 +462,11 @@ class Receiver(PacketQueue):
 		'''
 		self.callbacksActiveListening = True
 		while self.callbacksActiveListening:
-			#if not self.callbacksQueue.empty():
-			if len(self.callbacksQueue)>0:
+			if not self.callbacksQueue.empty():
+			#if len(self.callbacksQueue)>0:
 				#index,packet = self.callbacksQueue.get()
-				callback,packet = self.callbacksQueue.pop()
+				callback,packet = self.callbacksQueue.get()
+				#callback,packet = self.callbacksQueue.pop()
 				callback.run(packet)
 
 	def removeCallbacks(self):

@@ -2,10 +2,6 @@ from mirage.libs import io,utils,ble
 from mirage.core import module
 import configparser
 
-
-#FIXME
-import wpu.gogolprint as gogolprint
-@gogolprint.gogolprintedc(print_caller=True)
 class ble_discover(module.WirelessModule):
 	def init(self):
 		self.technology = "ble"

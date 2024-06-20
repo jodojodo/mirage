@@ -14,8 +14,6 @@ from mirage.libs import wireless,io,utils
 
 import traceback
 
-
-
 class BtHCIDevice(wireless.Device):
 	'''
 	This device allows to communicate with an HCI Device in order to use Bluetooth protocol.
@@ -38,8 +36,8 @@ class BtHCIDevice(wireless.Device):
 
 	def __init__(self,interface):
 		super().__init__(interface=interface)
-		#self.pendingQueue = Queue()
-		self.pendingQueue = deque()
+		self.pendingQueue = Queue()
+		#self.pendingQueue = deque()
 		self.initializeBluetooth = True
 
 	def _initBT(self):
@@ -97,20 +95,20 @@ class BtHCIDevice(wireless.Device):
 		self.socket.send(data)
 
 	def _recv(self):
-		try:
-			recv=self.pendingQueue.pop()
-		except:
-			#NOTE uncomment in case of freeze with unknown cause
-			#traceback.print_exc()
-			self.recvLock.acquire()
-			recv=self.socket.recv()
-			self.recvLock.release()
-		#if not self.pendingQueue.empty():
-		#	recv = self.pendingQueue.get(block=True)
-		#else:
+		#try:
+		#	recv=self.pendingQueue.pop()
+		#except:
+		#	#NOTE uncomment in case of freeze with unknown cause
+		#	#traceback.print_exc()
 		#	self.recvLock.acquire()
-		#	recv = self.socket.recv()
+		#	recv=self.socket.recv()
 		#	self.recvLock.release()
+		if not self.pendingQueue.empty():
+			recv = self.pendingQueue.get(block=True)
+		else:
+			self.recvLock.acquire()
+			recv = self.socket.recv()
+			self.recvLock.release()
 		return recv
 
 

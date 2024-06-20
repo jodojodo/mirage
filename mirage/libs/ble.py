@@ -23,7 +23,6 @@ from mirage.libs.ble_utils.dissectors import *
 from mirage.libs.ble_utils.att_server import *
 from mirage.libs import wireless,bt,io
 
-
 class BLEHCIDevice(bt.BtHCIDevice):
 	'''
 	This device allows to communicate with an HCI Device in order to use Bluetooth Low Energy protocol.
@@ -490,8 +489,8 @@ class BLEHCIDevice(bt.BtHCIDevice):
 		encryptionChange = self.socket.recv()
 		while encryptionChange is None or HCI_Event_Encryption_Change not in encryptionChange:
 			if encryptionChange is not None:
-				self.pendingQueue.appendleft(encryptionChange)
-				#self.pendingQueue.put(encryptionChange, block=True)
+				#self.pendingQueue.appendleft(encryptionChange)
+				self.pendingQueue.put(encryptionChange, block=True)
 			encryptionChange = self.socket.recv()
 		self._exitCommandMode()
 		return encryptionChange.enabled
@@ -549,6 +548,7 @@ class BLEEmitter(wireless.Emitter):
 			else:
 				# Specific sublayers
 				#if "hci" in self.interface:
+				print(f"DEBUG DEBUG DEBUG {dt=} {dt.__name__=}")
 				if dt==BLEHCIDevice:
 					packet.packet = HCI_Hdr()
 					if isinstance(packet,BLEConnect): # NOTE : was using isinstance
@@ -556,10 +556,10 @@ class BLEEmitter(wireless.Emitter):
 						packet.packet /= HCI_Command_Hdr()/HCI_Cmd_LE_Create_Connection(
 											paddr=packet.dstAddr,
 											patype=packet.type,
-											atype=packet.initiatorType,
-											interval=packet.interval,
-											min_interval=packet.interval,
-											max_interval=packet.interval)
+											atype=packet.initiatorType)#,
+											#interval=packet.interval,
+											#min_interval=packet.interval,
+											#max_interval=packet.interval)
 					elif isinstance(packet,BLEConnectionCancel): # NOTE : was using isinstance
 						packet.packet /= HCI_Command_Hdr()/HCI_Cmd_LE_Create_Connection_Cancel()
 					else:
