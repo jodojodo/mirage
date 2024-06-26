@@ -145,8 +145,8 @@ class ble_mitm(module.WirelessModule):
 		self.setStage(BLEMitmStage.CLONE)
 
 		if self.args["MITM_STRATEGY"] == "flood":
-			intervalMin = 200
-			intervalMax = 201
+			intervalMin = 30
+			intervalMax = 31
 
 		if utils.booleanArg(self.args["SLAVE_SPOOFING"]) and address != self.a2mEmitter.getAddress():
 			self.a2mEmitter.setAddress(address, random=addrType)

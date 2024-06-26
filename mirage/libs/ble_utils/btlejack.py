@@ -447,7 +447,7 @@ class BTLEJackDevice(wireless.Device):
 		command = None
 		if BTLE_DATA in packet:
 			command = BTLEJack_Hdr()/BTLEJack_Send_Packet_Command(ble_payload=packet[BTLE_DATA:])
-		if self.isConnected() and CtrlPDU in command.ble_payload and command.ble_payload.optcode == 0x02:
+		if self.isConnected() and BTLE_CTRL in command.ble_payload and command.ble_payload.optcode == 0x02:
 			self.hijacked = False
 		if command is not None :
 			self._send(raw(command))
