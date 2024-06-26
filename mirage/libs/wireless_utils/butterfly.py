@@ -44,6 +44,10 @@ def timeouted_read(dongle, endpoint, size_or_buffer, timeout=None):
 	return dongle.read(endpoint, size_or_buffer, timeout=timeout)
 
 
+#FIXME
+import wpu.tracebackback as tracebackback
+
+@tracebackback.tbbclass
 class ButterflyDevice(wireless.Device):
 	'''
 	This device allows to communicate with a ButteRFly Device in order to sniff BLE, Zigbee or ESB.

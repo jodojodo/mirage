@@ -8,6 +8,8 @@ The modules defined in the framework inherits from these classes in order to
 provide a standard API.
 '''
 
+has_keyboard_warned=False
+
 class Module:
 	'''
 	This class defines the standard behaviour of a Mirage Module.
@@ -149,7 +151,12 @@ class Module:
 		This method allows to register a callback called if a key is pressed (if a scenario is provided).
 		It allows to provide a simple user interaction in scenarios.
 		'''
-		keyboard.on_release(self._keyEvent)
+		try:
+			keyboard.on_release(self._keyEvent)
+		except ImportError as e:
+			if not has_keyboard_warned:
+				has_keyboard_warned=True
+				io.warning("You must be root to enable suggestions")
 
 	@scenarioSignal("onKey")
 	def key(self,key):

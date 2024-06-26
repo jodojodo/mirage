@@ -23,10 +23,11 @@ class StoppableThread(threading.Thread):
 			while self.signal:
 				self._target(*(self._args))
 		except OSError as e:
-			print("OS Error - killing Mirage")
+			#print("OS Error - killing Mirage")
+			print("OS Error")
 			traceback.print_exc()
 			print(e)
-			os._exit(1)
+			#os._exit(1)
 		except:
 			pass
 	def stop(self):

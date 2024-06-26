@@ -548,7 +548,6 @@ class BLEEmitter(wireless.Emitter):
 			else:
 				# Specific sublayers
 				#if "hci" in self.interface:
-				print(f"DEBUG DEBUG DEBUG {dt=} {dt.__name__=}")
 				if dt==BLEHCIDevice:
 					packet.packet = HCI_Hdr()
 					if isinstance(packet,BLEConnect): # NOTE : was using isinstance
