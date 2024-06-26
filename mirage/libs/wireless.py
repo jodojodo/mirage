@@ -472,7 +472,10 @@ class Receiver(PacketQueue):
 		'''
 		Remove the callbacks attached to the Receiver.
 		'''
-		self.callbacks = {}
+		self.instanceof_events=set()
+		self.npackets_counter=0
+		self.npackets_events=set()
+		self.callbacks={}
 
 	def stop(self):
 		'''

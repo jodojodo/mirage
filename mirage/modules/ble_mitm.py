@@ -4,6 +4,7 @@ from mirage.libs import io,utils,ble
 from mirage.core import module
 import os
 
+
 class BLEMitmStage(IntEnum):
 	SCAN = 1
 	CLONE = 2
@@ -145,8 +146,8 @@ class ble_mitm(module.WirelessModule):
 		self.setStage(BLEMitmStage.CLONE)
 
 		if self.args["MITM_STRATEGY"] == "flood":
-			intervalMin = 30
-			intervalMax = 31
+			intervalMin = 50
+			intervalMax = 51
 
 		if utils.booleanArg(self.args["SLAVE_SPOOFING"]) and address != self.a2mEmitter.getAddress():
 			self.a2mEmitter.setAddress(address, random=addrType)
