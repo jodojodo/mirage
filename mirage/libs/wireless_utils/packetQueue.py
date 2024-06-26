@@ -4,6 +4,9 @@ from queue import Queue
 ## --> append/pop from both sides is thread-safe
 from mirage.libs.utils import exitMirage
 
+import traceback
+import os
+
 class StoppableThread(threading.Thread):
 	'''
 	This class is just a simplistic implementation of a stoppable thread.
@@ -19,6 +22,11 @@ class StoppableThread(threading.Thread):
 		try:
 			while self.signal:
 				self._target(*(self._args))
+		except OSError as e:
+			print("OS Error - killing Mirage")
+			traceback.print_exc()
+			print(e)
+			os._exit(1)
 		except:
 			pass
 	def stop(self):
@@ -133,4 +141,5 @@ class PacketQueue:
 			(name in self.device.__class__.sharedMethods or name == "hasCapabilities")):
 			return getattr(self.device,name)
 		else:
+			print(f"DEBUG {name=} (!='device'?) - {hasattr(self.device,name)=} - {self.device.__class__.sharedMethods=} (contains {name=}?) OR {name=} (=='hascapabilities'?)")
 			raise AttributeError

@@ -15,39 +15,39 @@ class BTLEJackDevice(wireless.Device):
 	The following capabilities are actually supported :
 
 	+-----------------------------------+----------------+
-	| Capability			    | Available ?    |
+	| Capability				| Available ?	|
 	+===================================+================+
-	| SCANNING                          | yes            |
+	| SCANNING						  | yes			|
 	+-----------------------------------+----------------+
-	| ADVERTISING                       | no             |
+	| ADVERTISING					   | no			 |
 	+-----------------------------------+----------------+
-	| SNIFFING_ADVERTISEMENTS           | yes            |
+	| SNIFFING_ADVERTISEMENTS		   | yes			|
 	+-----------------------------------+----------------+
-	| SNIFFING_NEW_CONNECTION           | yes            |
+	| SNIFFING_NEW_CONNECTION		   | yes			|
 	+-----------------------------------+----------------+
-	| SNIFFING_EXISTING_CONNECTION      | yes            |
+	| SNIFFING_EXISTING_CONNECTION	  | yes			|
 	+-----------------------------------+----------------+
-	| JAMMING_CONNECTIONS               | yes            |
+	| JAMMING_CONNECTIONS			   | yes			|
 	+-----------------------------------+----------------+
-	| JAMMING_ADVERTISEMENTS            | yes            |
+	| JAMMING_ADVERTISEMENTS			| yes			|
 	+-----------------------------------+----------------+
-	| HIJACKING_MASTER                  | yes            |
+	| HIJACKING_MASTER				  | yes			|
 	+-----------------------------------+----------------+
-	| HIJACKING_SLAVE                   | no             |
+	| HIJACKING_SLAVE				   | no			 |
 	+-----------------------------------+----------------+
-	| INJECTING                         | no             |
+	| INJECTING						 | no			 |
 	+-----------------------------------+----------------+
-	| MITMING_EXISTING_CONNECTION       | no             |
+	| MITMING_EXISTING_CONNECTION	   | no			 |
 	+-----------------------------------+----------------+
-	| INITIATING_CONNECTION             | no             |
+	| INITIATING_CONNECTION			 | no			 |
 	+-----------------------------------+----------------+
-	| RECEIVING_CONNECTION              | no             |
+	| RECEIVING_CONNECTION			  | no			 |
 	+-----------------------------------+----------------+
-	| COMMUNICATING_AS_MASTER           | yes            |
+	| COMMUNICATING_AS_MASTER		   | yes			|
 	+-----------------------------------+----------------+
-	| COMMUNICATING_AS_SLAVE            | no             |
+	| COMMUNICATING_AS_SLAVE			| no			 |
 	+-----------------------------------+----------------+
-	| HCI_MONITORING                    | no             |
+	| HCI_MONITORING					| no			 |
 	+-----------------------------------+----------------+
 
 	'''
@@ -79,6 +79,7 @@ class BTLEJackDevice(wireless.Device):
 			"getAccessAddress",
 			"getCrcInit",
 			"getChannelMap",
+			"setChannelMap", # debug btlejack hijacking
 			"getHopInterval",
 			"getHopIncrement",
 			"setJamming",
@@ -105,7 +106,7 @@ class BTLEJackDevice(wireless.Device):
 		self.jamming = enable
 
 
-	def setHijacking(self,enable=True):
+	def setHijacking(self,target="master",enable=True):
 		'''
 		This method allows to enable or disable the hijacking mode.
 
@@ -122,6 +123,7 @@ class BTLEJackDevice(wireless.Device):
 			This method is a **shared method** and can be called from the corresponding Emitters / Receivers.
 
 		'''
+		assert target=="master"
 		self.hijacking = enable
 
 
@@ -487,7 +489,7 @@ class BTLEJackDevice(wireless.Device):
 													 channel is None else channel))
 
 	# Existing Connection Sniffing methods
-	def sniffExistingConnections(self,accessAddress=None,crcInit=None,channelMap=None):
+	def sniffExistingConnections(self,accessAddress=None,crcInit=None,channelMap=None,hopInterval=None,hopIncrement=None):
 		'''
 		This method starts the existing connections sniffing mode.
 
@@ -531,7 +533,16 @@ class BTLEJackDevice(wireless.Device):
 					self._recoverFromCrcInit(accessAddress,crcInit)
 				else:
 					self._setChannelMap(channelMap)
-					self._recoverFromChannelMap(accessAddress,crcInit, channelMap)
+					if hopInterval is None or hopIncrement is None:
+						self._recoverFromChannelMap(accessAddress,crcInit, channelMap)
+					else:
+						self._setHopInterval(hopInterval)
+						self._setHopIncrement(hopIncrement)
+						if self.hijacking:
+							self._internalCommand(BTLEJack_Enable_Hijacking_Command(enabled=0x01))
+						elif self.jamming:
+							self._internalCommand(BTLEJack_Enable_Jamming_Command(enabled=0x01))
+						self.synchronized = True
 
 	def _resetFilteringPolicy(self,policyType="blacklist"):
 		policy = 0x00 if policyType == "blacklist" else 0x01
@@ -622,8 +633,8 @@ class BTLEJackDevice(wireless.Device):
 				self.setChannel(channel)
 			self._internalCommand(BTLEJack_Advertisements_Command()/BTLEJack_Advertisements_Enable_Jamming_Command(
 											offset=offset,
-										    	pattern=pattern,
-										    	channel=self.getChannel() if
+												pattern=pattern,
+												channel=self.getChannel() if
 										 	channel is None else channel))
 		else:
 			io.fail("Jamming advertisements is not supported by BTLEJack firmware,"
@@ -640,6 +651,10 @@ class BTLEJackDevice(wireless.Device):
 		self.crcInit = crcInit
 
 	def _setChannelMap(self,channelMap=None):
+		self.channelMap = channelMap
+
+	#debug btlejack hijacking
+	def setChannelMap(self,channelMap=None):
 		self.channelMap = channelMap
 
 	def _setHopInterval(self,hopInterval=None):

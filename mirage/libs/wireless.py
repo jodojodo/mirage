@@ -11,7 +11,6 @@ from mirage.libs.wireless_utils.butterfly import ButterflyDevice
 
 import importlib
 
-
 class Emitter(PacketQueue):
 	'''
 	This class allows an user to communicate with a device in order to send data. Indeed, Mirage provides no direct access to the device component from the modules : the hardware components are manipulated thanks to the Emitter class and the Receiver class. Emitters' classes for a given technology inherits from this class.

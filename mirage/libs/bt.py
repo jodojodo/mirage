@@ -133,6 +133,9 @@ class BtHCIDevice(wireless.Device):
 				utils.wait(seconds=0.0001)
 			return None
 		# An error may occur during a socket restart
+		except BrokenPipeError as e:
+			self._exitListening()
+			raise e
 		except OSError as e:
 			traceback.print_exc()
 			self._exitListening()

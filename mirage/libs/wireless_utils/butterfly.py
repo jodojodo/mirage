@@ -81,7 +81,8 @@ class ButterflyDevice(wireless.Device):
 			data = None
 			try:
 				#size = self.dongle.read(0x81,data,timeout=10)
-				data = self.dongle.read(0x81,size,timeout=10)
+				#data = self.dongle.read(0x81,size,timeout=10)
+				data = self.dongle.read(0x81,size,timeout=1)
 				size = len(data)
 			except usb.core.USBTimeoutError:
 				#traceback.print_exc()
@@ -223,7 +224,6 @@ class ButterflyDevice(wireless.Device):
 			self.controller = "NONE"
 			self.directions = [False,False,False]
 			self.lock = Lock()
-			#self.lock = GogolprintLock()
 			self.responsesQueue = Queue()
 
 		except:

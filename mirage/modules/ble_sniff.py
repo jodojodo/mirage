@@ -221,12 +221,12 @@ class ble_sniff(module.WirelessModule):
 		hopIncrement = int(self.receivers[index].getHopIncrement())
 		io.chart(["Access Address", "CRCInit", "Channel Map", "Hop Interval", "Hop Increment"],[[aa,crcInit,channelMap,hopInterval,hopIncrement]],"Sniffed Connection")
 
-	def sniffExistingConnections(self, receiver,accessAddress, crcInit, channelMap):
+	def sniffExistingConnections(self, receiver,accessAddress, crcInit, channelMap, hopInterval=None, hopIncrement=None):
 		if utils.booleanArg(self.args["JAMMING"]):
 			receiver.setJamming(enable=True)
 		if utils.booleanArg(self.args["HIJACKING_MASTER"]):
 			receiver.setHijacking(target="master",enable=True)
-		receiver.sniffExistingConnections(accessAddress,crcInit,channelMap )
+		receiver.sniffExistingConnections(accessAddress,crcInit,channelMap,hopInterval,hopIncrement)
 		if not utils.booleanArg(self.args["HIJACKING_MASTER"]):
 			receiver.onEvent("*", callback=self.show)
 		while not receiver.isSynchronized():
@@ -282,7 +282,9 @@ class ble_sniff(module.WirelessModule):
 						receiver,
 						receiver.getAccessAddress(),
 						receiver.getCrcInit(),
-						receiver.getChannelMap()
+						receiver.getChannelMap(),
+						receiver.getHopInterval(),
+						receiver.getHopIncrement()
 						)
 				if "butterfly" in receiver.interface and utils.booleanArg(self.args["MITMING"]):
 					io.info("Attack started in 7 seconds...")
